@@ -17,4 +17,5 @@ class ConnectivityManagerImpl @Inject constructor(private val context: Context) 
         return activeNetwork?.isConnectedOrConnecting == true
     }
 
+
 }

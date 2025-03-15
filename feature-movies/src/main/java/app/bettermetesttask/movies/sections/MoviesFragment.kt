@@ -40,7 +40,7 @@ class MoviesFragment : Fragment(R.layout.movies_fragment), Injectable {
         super.onViewCreated(view, savedInstanceState)
 
         adapter.onItemClicked = { movie ->
-            viewModel.openMovieDetails(movie)
+            viewModel.onMovieDetailsClick(movie)
         }
 
         adapter.onItemLiked = { movie ->
