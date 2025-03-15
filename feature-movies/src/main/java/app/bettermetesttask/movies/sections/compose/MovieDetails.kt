@@ -20,6 +20,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -44,7 +45,11 @@ fun MovieDetails(
     onDismiss : () -> Unit,
     onLikeClicked : (Movie) -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
     ModalBottomSheet(
+        sheetState = sheetState,
         onDismissRequest = onDismiss
     ) {
         Column (

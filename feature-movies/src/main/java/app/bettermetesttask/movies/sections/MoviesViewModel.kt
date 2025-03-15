@@ -1,5 +1,6 @@
 package app.bettermetesttask.movies.sections
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 class MoviesViewModel @Inject constructor(
@@ -35,8 +37,6 @@ class MoviesViewModel @Inject constructor(
 
     val moviesStateFlow: StateFlow<MoviesState>
         get() = moviesMutableFlow.asStateFlow()
-
-    private var moviesJob: Job? = null
 
     init {
         loadMovies()
@@ -64,12 +64,16 @@ class MoviesViewModel @Inject constructor(
     }
 
     fun likeMovie(movie: Movie) {
-        viewModelScope.launch {
-            if (!movie.liked) {
-                likeMovieUseCase(movie.id)
-            } else {
-                dislikeMovieUseCase(movie.id)
+        try {
+            viewModelScope.launch {
+                if (!movie.liked) {
+                    likeMovieUseCase(movie.id)
+                } else {
+                    dislikeMovieUseCase(movie.id)
+                }
             }
+        } catch (e : Exception) {
+            Timber.e("Error while assigning a like: ${e.message}")
         }
     }
 
