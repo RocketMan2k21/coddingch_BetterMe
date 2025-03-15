@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,12 +30,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,11 +48,13 @@ import androidx.fragment.app.viewModels
 import app.bettermetesttask.domainmovies.entries.Movie
 import app.bettermetesttask.featurecommon.injection.utils.Injectable
 import app.bettermetesttask.featurecommon.injection.viewmodel.SimpleViewModelProviderFactory
+import app.bettermetesttask.movies.R
 import app.bettermetesttask.movies.sections.MoviesState
 import app.bettermetesttask.movies.sections.MoviesViewModel
 import coil3.compose.AsyncImage
 import javax.inject.Inject
 import javax.inject.Provider
+import kotlin.math.max
 
 class MoviesComposeFragment : Fragment(), Injectable {
 
@@ -71,11 +78,16 @@ class MoviesComposeFragment : Fragment(), Injectable {
             )
             setContent {
                 val viewState by viewModel.moviesStateFlow.collectAsState()
-                MoviesComposeScreen(viewState, likeMovie = { movie ->
-                    viewModel.likeMovie(movie)
-                }, viewLoaded = {
-                    viewModel.loadMovies()
-                })
+                val selectedMovie by remember { viewModel.selectedMovie }
+                MoviesComposeScreen(
+                    viewState, likeMovie = { movie ->
+                        viewModel.likeMovie(movie)
+                    },
+                    openMovie = { movie ->
+                        viewModel.onMovieDetailsClick(movie)
+                    },
+                    selectedMovie = selectedMovie
+                )
             }
         }
     }
@@ -84,10 +96,10 @@ class MoviesComposeFragment : Fragment(), Injectable {
 @Composable
 private fun MoviesComposeScreen(
     moviesState: MoviesState,
+    selectedMovie: Movie?,
     likeMovie: (Movie) -> Unit,
-    viewLoaded: () -> Unit
+    openMovie: (Movie?) -> Unit,
 ) {
-    viewLoaded()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -98,10 +110,27 @@ private fun MoviesComposeScreen(
             is MoviesState.Loaded -> {
                 LazyColumn {
                     items(moviesState.movies) { item ->
-                        MovieItem(item, onLikeClicked = {
-                            likeMovie(item)
-                        })
+                        MovieItem(
+                            movie = item,
+                            onLikeClicked = {
+                                likeMovie(item)
+                            },
+                            onMovieClicked = {
+                                openMovie(item)
+                            }
+                        )
                     }
+                }
+
+                if (selectedMovie != null) {
+                    MovieDetails(
+                        movie = selectedMovie,
+                        onDismiss = { openMovie(null) },
+                        onLikeClicked = { movie ->
+                            likeMovie(movie)
+                            openMovie(selectedMovie.copy(liked = !selectedMovie.liked))
+                        }
+                    )
                 }
             }
 
@@ -113,16 +142,30 @@ private fun MoviesComposeScreen(
                     CircularProgressIndicator()
                 }
             }
+
+            is MoviesState.Error -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = moviesState.msg,
+                        fontSize = 24.sp,
+                        color = Color.Black,
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-fun MovieItem(movie: Movie, onLikeClicked: (Int) -> Unit) {
+fun MovieItem(movie: Movie, onLikeClicked: () -> Unit, onMovieClicked: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable { onMovieClicked() },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
@@ -133,24 +176,38 @@ fun MovieItem(movie: Movie, onLikeClicked: (Int) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
-                model = movie.posterPath,
+                model = movie.posterPath ?: 0,
                 contentDescription = "Movie Poster",
                 modifier = Modifier
                     .size(60.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color.Gray)
+                    .background(Color.Gray),
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(R.drawable.plc_ic)
             )
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = movie.title, fontSize = 18.sp, color = Color.Black)
-                Text(text = movie.description, fontSize = 14.sp, color = Color.Gray)
+                Text(
+                    text = movie.title,
+                    fontSize = 18.sp,
+                    color = Color.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = movie.description,
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            IconButton(onClick = { onLikeClicked(movie.id) }) {
+            IconButton(onClick = { onLikeClicked() }) {
                 Icon(
                     imageVector = if (movie.liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = "Like Button",
@@ -174,5 +231,6 @@ private fun PreviewsMoviesComposeScreen() {
                 liked = index % 2 == 0,
             )
         }
-    ), likeMovie = {}, viewLoaded = {})
+    ), likeMovie = {}, openMovie = {}, selectedMovie = null
+    )
 }

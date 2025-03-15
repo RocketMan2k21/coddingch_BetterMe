@@ -7,9 +7,10 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import app.bettermetesttask.domainmovies.entries.Movie
-import app.bettermetesttask.featurecommon.utils.images.GlideApp
+import app.bettermetesttask.featurecommon.utils.images.AndroidTestTaskGlideModule
 import app.bettermetesttask.movies.R
 import app.bettermetesttask.movies.databinding.MovieItemBinding
+import com.bumptech.glide.Glide
 import javax.inject.Inject
 
 class MoviesAdapter @Inject constructor() : ListAdapter<Movie, MoviesAdapter.MoviesHolder>(MovieItemDiffCallback()) {
@@ -30,7 +31,7 @@ class MoviesAdapter @Inject constructor() : ListAdapter<Movie, MoviesAdapter.Mov
             with(binding) {
                 titleTv.text = item.title
                 descriptionTv.text = item.description
-                GlideApp.with(binding.rootLayout)
+                Glide.with(binding.rootLayout)
                     .load(item.posterPath)
                     .into(posterIv)
                 btnLike.setImageDrawable(

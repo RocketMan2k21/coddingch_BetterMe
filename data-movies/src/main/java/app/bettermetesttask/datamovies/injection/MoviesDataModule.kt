@@ -4,8 +4,11 @@ import android.content.Context
 import androidx.room.Room
 import app.bettermetesttask.datamovies.database.DB_NAME
 import app.bettermetesttask.datamovies.database.MoviesDatabase
-import app.bettermetesttask.datamovies.repository.MoviesRepositoryImpl
-import app.bettermetesttask.domainmovies.repository.MoviesRepository
+import app.bettermetesttask.datamovies.repository.MoviesRepositoryLocalImpl
+import app.bettermetesttask.datamovies.repository.MoviesRepositoryRemoteImpl
+import app.bettermetesttask.datamovies.repository.stores.MoviesRestStore
+import app.bettermetesttask.domainmovies.repository.MoviesRepositoryLocal
+import app.bettermetesttask.domainmovies.repository.MovieApiRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -21,8 +24,18 @@ abstract class MoviesDataModule {
             return Room.databaseBuilder(context.applicationContext, MoviesDatabase::class.java, DB_NAME)
                 .build()
         }
+
+        @Provides
+        @Singleton
+        fun bindRestStore(): MoviesRestStore {
+            return MoviesRestStore()
+        }
     }
 
     @Binds
-    abstract fun bindMoviesRepository(repositoryImpl: MoviesRepositoryImpl): MoviesRepository
+    abstract fun bindMoviesLocalRepository(repositoryImpl: MoviesRepositoryLocalImpl): MoviesRepositoryLocal
+
+    @Binds
+    abstract fun bindMoviesApiRepository(apiRepository: MoviesRepositoryRemoteImpl): MovieApiRepository
+
 }
